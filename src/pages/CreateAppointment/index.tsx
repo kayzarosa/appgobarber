@@ -4,7 +4,7 @@ import { format } from 'date-fns';
 import DateTimePicker from '@react-native-community/datetimepicker';
 
 import { useRoute, useNavigation } from '@react-navigation/native';
-import { Platform } from 'react-native';
+import { Platform, Alert } from 'react-native';
 import { useAuth } from '../../hooks/auth';
 import api from '../../services/api';
 
@@ -24,12 +24,15 @@ import {
   Title,
   OpenDatePickerButton,
   OpenDatePickerButtonText,
+  DateSelectTitle,
   Schedule,
   Section,
   SectionTitle,
   SectionContent,
   Hour,
   HourText,
+  CreateAppointmentButton,
+  CreateAppointmentButtonText,
 } from './styles';
 
 interface RouteParams {
@@ -50,13 +53,16 @@ interface Availability {
 const Appointment: React.FC = () => {
   const { user } = useAuth();
   const route = useRoute();
-  const { goBack } = useNavigation();
+  const { goBack, navigate } = useNavigation();
 
   const { providerId } = route.params as RouteParams;
 
   const [availability, setAvailability] = useState<Availability[]>([]);
   const [showDatePicker, setShowDatePicker] = useState(false);
   const [selectedDate, setSelectedDate] = useState(new Date());
+  const [dateSelecedFormated, setDateSelecedFormated] = useState(
+    format(new Date(), 'dd/MM/yyyy'),
+  );
   const [selectedHour, setSelectedHour] = useState(0);
 
   const [providers, setProviders] = useState<Provider[]>([]);
@@ -79,6 +85,7 @@ const Appointment: React.FC = () => {
       })
       .then((response) => {
         setAvailability(response.data);
+        setSelectedHour(0);
       });
   }, [selectedDate, selectedProvider]);
 
@@ -105,6 +112,8 @@ const Appointment: React.FC = () => {
 
       if (date) {
         setSelectedDate(date);
+
+        setDateSelecedFormated(format(date, 'dd/MM/yyyy'));
       }
     },
     [],
@@ -116,6 +125,27 @@ const Appointment: React.FC = () => {
     },
     [setSelectedHour],
   );
+
+  const handleCreateAppointment = useCallback(async () => {
+    try {
+      const date = new Date(selectedDate);
+
+      date.setHours(selectedHour);
+      date.setMinutes(0);
+
+      await api.post('/appointments', {
+        provider_id: selectedProvider,
+        date,
+      });
+
+      navigate('AppointmentCreated', { date: date.getTime() });
+    } catch (error) {
+      Alert.alert(
+        'Erro ao criar agendamento',
+        'Ocorreu um erro ao tentar criar o agendamento, tente novamente.',
+      );
+    }
+  }, [selectedHour, selectedDate, selectedProvider, navigate]);
 
   const morningAvailability = useMemo(() => {
     return availability
@@ -168,7 +198,7 @@ const Appointment: React.FC = () => {
                 <ProviderAvatar source={{ uri: provider.avatar_url }} />
 
                 <ProviderName selected={provider.id === selectedProvider}>
-                  {provider.name}
+                  {`${provider.name}  `}
                 </ProviderName>
               </ProviderContainer>
             )}
@@ -193,6 +223,8 @@ const Appointment: React.FC = () => {
               value={selectedDate}
             />
           )}
+
+          <DateSelectTitle>{`Data: ${dateSelecedFormated}`}</DateSelectTitle>
         </Calender>
 
         <Schedule>
@@ -240,6 +272,10 @@ const Appointment: React.FC = () => {
             </SectionContent>
           </Section>
         </Schedule>
+
+        <CreateAppointmentButton onPress={handleCreateAppointment}>
+          <CreateAppointmentButtonText>Agendar</CreateAppointmentButtonText>
+        </CreateAppointmentButton>
       </Content>
     </Container>
   );
