@@ -41,7 +41,6 @@ const Dashboard: React.FC = () => {
   }, []);
 
   const navigateToProfile = useCallback(() => {
-    // signOut();
     navigate('Profile');
   }, [navigate]);
 
@@ -51,6 +50,10 @@ const Dashboard: React.FC = () => {
     },
     [navigate],
   );
+
+  const logOut = useCallback(() => {
+    signOut();
+  }, [signOut]);
 
   return (
     <Container>
@@ -63,6 +66,8 @@ const Dashboard: React.FC = () => {
         <ProfileButton onPress={navigateToProfile}>
           <UserAvatar source={{ uri: user.avatar_url }} />
         </ProfileButton>
+
+        <Icon name="log-out" size={24} color="#FFB84D" onPress={logOut} />
       </Header>
 
       <ProvidersList

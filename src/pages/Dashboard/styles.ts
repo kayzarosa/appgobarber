@@ -44,6 +44,7 @@ export const UserAvatar = styled.Image`
   width: 56px;
   height: 56px;
   border-radius: 28px;
+  margin-left: 100px;
 `;
 
 export const ProvidersList = styled(FlatList as new () => FlatList<Provider>)`
